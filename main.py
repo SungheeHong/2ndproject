@@ -1,9 +1,8 @@
-
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
 
-# **관광지 데이터 정의**
+# 관광지 데이터 정의
 tourist_spots = [
     {
         "name": "사그라다 파밀리아",
@@ -59,7 +58,7 @@ tourist_spots = [
     }
 ]
 
-# **스트림릿 앱 레이아웃**
+# 스트림릿 앱 레이아웃
 st.title("스페인 주요 관광지 친절 가이드 🇪🇸")
 st.markdown(
     """
@@ -68,22 +67,68 @@ st.markdown(
     """
 )
 
-# **폴리움 지도 생성**
+# 폴리움 지도 생성
 spain_map = folium.Map(location=(40.4168, -3.7038), zoom_start=6, tiles='cartodbpositron')
 
+# 하트 모양 CSS와 팝업 콘텐츠 생성 함수
+def make_heart_popup_html(name, city, description):
+    html = f"""
+    <div style="display: flex; justify-content: center; align-items: center;">
+      <div style="
+        width: 200px; height: 180px; position: relative;
+        display: flex; flex-direction: column; align-items: center;
+        ">
+        <div style="
+          position: absolute; top: 20px; left: 36px; width: 128px; height: 128px;
+        ">
+          <div style="
+            position: absolute; width: 128px; height: 128px; left: 0; top: 0;
+            background: red;
+            border-radius: 64px 64px 0 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          "></div>
+          <div style="
+            position: absolute; width: 128px; height: 128px; left: 64px; top: 0;
+            background: red;
+            border-radius: 64px 64px 0 0;
+            transform: rotate(45deg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          "></div>
+        </div>
+        <div style="
+          position: absolute; top: 60px; left: 0; width: 200px; height: 120px;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          z-index: 2; color: white; text-align: center; font-family: sans-serif;
+        ">
+          <div style="font-size:1.1em; font-weight:bold;">{name}</div>
+          <div style="font-size:0.95em; margin-bottom:2px;">({city})</div>
+          <div style="font-size:0.88em; margin-top:5px; max-height:72px; overflow:auto; padding:0 8px;">
+            {description}
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+    return html
+
+# 하트 모양 팝업을 지도에 추가
 for spot in tourist_spots:
+    popup_html = make_heart_popup_html(spot["name"], spot["city"], spot["description"])
+    iframe = folium.IFrame(html=popup_html, width=230, height=200)
+    popup = folium.Popup(iframe, max_width=250)
     folium.Marker(
         location=spot["location"],
-        popup=f"<b>{spot['name']}</b><br>{spot['city']}<br><br>{spot['description']}",
+        popup=popup,
         tooltip=spot["name"],
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(spain_map)
 
-# **지도 표시**
+# 지도 표시
 st.subheader("🗺️ 관광지 위치 지도")
 st_folium(spain_map, width=700, height=500)
 
-# **관광지별 상세 설명**
+# 관광지별 상세 설명
 st.subheader("🌟 주요 관광지 상세 가이드")
 for spot in tourist_spots:
     st.markdown(f"### {spot['name']} ({spot['city']})")
