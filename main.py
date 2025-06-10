@@ -2,100 +2,97 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 
-# 관광지 데이터 정의
-tourist_spots = [
+# 평균 기온이 가장 높은 5개 도시 데이터
+hot_cities = [
     {
-        "name": "사그라다 파밀리아",
-        "city": "바르셀로나",
-        "location": (41.4036, 2.1744),
+        "name": "쿠웨이트시티",
+        "country": "쿠웨이트",
+        "location": (29.3759, 47.9774),
+        "avg_temp": 32.1, # 최근 10년간 연평균(°C)
         "description": (
-            "안토니 가우디의 대표작인 사그라다 파밀리아는 스페인을 대표하는 성당 중 하나로, "
-            "1882년부터 건축이 시작되어 현재도 공사가 진행 중입니다. 독특한 건축미와 화려한 스테인드글라스, "
-            "상징적인 첨탑들이 조화를 이루며, 유네스코 세계문화유산으로 등재되어 있습니다. "
-            "성당 내부에 들어서면 빛의 향연과 자연에서 영감을 받은 독창적인 디자인에 감탄하게 됩니다."
+            "쿠웨이트시티는 중동 지역의 대표적인 고온 도시로, 여름철에는 일 최고기온이 50°C를 넘나들기도 합니다. "
+            "최근 10년간 연평균 기온은 약 32°C로, 지구에서 가장 더운 도시 중 하나로 꼽힙니다. "
+            "현대적인 도시 풍경과 고대 이슬람 문화의 조화가 인상적이며, 대표 관광지로 쿠웨이트 타워, 대모스크, "
+            "해변 산책로 등이 있습니다. 한여름에는 외출 시 자외선 차단과 수분 섭취에 각별한 주의가 필요합니다."
         )
     },
     {
-        "name": "알람브라 궁전",
-        "city": "그라나다",
-        "location": (37.1760, -3.5881),
+        "name": "바스라",
+        "country": "이라크",
+        "location": (30.5085, 47.7804),
+        "avg_temp": 31.8,
         "description": (
-            "알람브라 궁전은 이슬람 문화와 스페인 고유의 예술이 융합된 걸작으로, "
-            "그라나다 언덕 위에 우아하게 자리잡고 있습니다. 대리석 기둥, 섬세한 무늬의 타일, "
-            "정교한 정원과 분수는 방문객들에게 중세 안달루시아의 정취를 선사합니다. "
-            "특히 나스리드 궁, 콤레스 궁전, 사자정원은 알람브라의 백미로 손꼽힙니다."
+            "이라크 남부의 항구 도시 바스라는 최근 10년간 31.8°C의 높은 연평균 기온을 기록하고 있습니다. "
+            "여름은 극도로 덥고 건조하며, 일교차도 큽니다. 바스라는 유프라테스와 티그리스 강 하구에 위치해 있어 "
+            "고대 문명의 흔적과 현대 산업도시의 모습을 동시에 볼 수 있습니다. 방문 시에는 강변 산책, 시장 탐방, "
+            "지역 전통 요리 체험 등을 추천하지만, 혹서기에는 실내 관광을 권장합니다."
         )
     },
     {
-        "name": "프라도 미술관",
-        "city": "마드리드",
-        "location": (40.4138, -3.6921),
+        "name": "도하",
+        "country": "카타르",
+        "location": (25.2854, 51.5310),
+        "avg_temp": 31.4,
         "description": (
-            "프라도 미술관은 스페인에서 가장 유명한 미술관으로, 유럽 미술의 진수를 감상할 수 있는 곳입니다. "
-            "벨라스케스, 고야, 엘 그레코 등 스페인 거장들의 작품은 물론, 루벤스, 티치아노, 히에로니무스 보스 등의 "
-            "유럽 대가들의 명작도 전시되어 있습니다. 미술 애호가라면 꼭 방문해야 할 필수 코스입니다."
+            "카타르의 수도 도하는 아라비아 반도의 중심에 위치하여, 최근 10년간 평균 31.4°C의 고온을 보이고 있습니다. "
+            "도하는 현대적인 건축물과 전통 시장이 어우러져 있으며, 이슬람 미술관, 수크 와키프, 인공섬 더 펄 등을 "
+            "둘러볼 수 있습니다. 여름철은 매우 덥고 습도가 높으며, 실내 관광과 야간 활동이 활발합니다."
         )
     },
     {
-        "name": "세비야 대성당 & 히랄다 탑",
-        "city": "세비야",
-        "location": (37.3861, -5.9926),
+        "name": "리야드",
+        "country": "사우디아라비아",
+        "location": (24.7136, 46.6753),
+        "avg_temp": 30.6,
         "description": (
-            "세비야 대성당은 세계에서 세 번째로 큰 기독교 성당으로, 15세기 고딕 양식의 웅장함을 자랑합니다. "
-            "히랄다 탑은 원래 이슬람 사원의 첨탑이었으나, 이후 대성당의 종탑으로 사용되고 있습니다. "
-            "탑 정상에 오르면 세비야 시내 전경을 한눈에 바라볼 수 있어 많은 이들이 방문합니다."
+            "사우디아라비아의 수도 리야드는 최근 10년간 연평균 30.6°C로 매우 높은 기온을 기록하고 있습니다. "
+            "도시 곳곳에 초현대적 건축물과 대형 쇼핑몰, 고대 유적지가 공존합니다. 대표 명소로는 킹덤 센터, "
+            "마스마크 요새, 국립박물관 등이 있습니다. 건기와 혹서기가 뚜렷하므로 방문 시 계절에 따른 준비가 필요합니다."
         )
     },
     {
-        "name": "파르크 구엘",
-        "city": "바르셀로나",
-        "location": (41.4145, 2.1527),
+        "name": "피닉스",
+        "country": "미국 애리조나주",
+        "location": (33.4484, -112.0740),
+        "avg_temp": 29.9,
         "description": (
-            "파르크 구엘은 안토니 가우디가 설계한 독창적인 공원으로, 파스텔톤 모자이크와 곡선미가 돋보이는 곳입니다. "
-            "동화 속에 온 듯한 분위기와 바르셀로나 시내를 내려다볼 수 있는 멋진 전망 덕분에 "
-            "가족과 연인 모두에게 인기 있는 명소입니다."
+            "피닉스는 미국 대도시 중 최상위 수준의 평균 기온을 자랑하며, 최근 10년간 약 29.9°C의 연평균 기온을 기록했습니다. "
+            "사막성 기후로, 여름 낮 최고기온이 45°C를 넘기도 합니다. 피닉스 주변에는 사구와 선인장이 펼쳐진 소노란 사막, "
+            "뮤지엄, 리조트, 야외 액티비티 등이 많아 자연과 레저를 동시에 즐길 수 있습니다. 자외선 차단, 충분한 음료 섭취 등 "
+            "건강 관리가 매우 중요합니다."
         )
     }
 ]
 
-# 관광지 이름 리스트 생성
-spot_names = [spot["name"] for spot in tourist_spots]
+city_names = [f"{city['name']} ({city['country']})" for city in hot_cities]
 
-st.title("스페인 주요 관광지 친절 가이드 🇪🇸")
+st.title("지구에서 가장 뜨거운 도시 가이드 🌞")
 st.markdown(
     """
-    스페인은 세계적으로 유명한 관광지와 유구한 역사를 자랑하는 나라입니다.  
-    아래에서 원하는 관광지를 선택하면, 해당 지역의 위치와 상세 정보를 확인할 수 있습니다!
+    최근 10년간(2015~2024) 평균 기온이 가장 높은 도시 5곳을 선정했습니다.
+    도시를 선택하면 상세 정보와 위치를 확인할 수 있습니다.
     """
 )
 
-# 관광지 선택 위젯
-selected_name = st.selectbox("관광지를 선택하세요:", spot_names)
+# 도시 선택
+selected_city_name = st.selectbox("도시를 선택하세요:", city_names)
+selected_city = next(city for city in hot_cities if f"{city['name']} ({city['country']})" == selected_city_name)
 
-# 선택된 관광지 정보 추출
-selected_spot = next(spot for spot in tourist_spots if spot["name"] == selected_name)
+# 폴리움 지도 생성 및 마커 표시
+city_map = folium.Map(location=selected_city["location"], zoom_start=8, tiles="cartodbpositron")
+for city in hot_cities:
+    color = "red" if city["name"] == selected_city["name"] else "gray"
+    icon = "fire" if city["name"] == selected_city["name"] else "info-sign"
+    folium.Marker(
+        location=city["location"],
+        tooltip=f"{city['name']} ({city['country']})",
+        icon=folium.Icon(color=color, icon=icon)
+    ).add_to(city_map)
 
-# 지도 생성 및 마커 표시
-m = folium.Map(location=selected_spot["location"], zoom_start=13, tiles='cartodbpositron')
+st.subheader("🗺️ 도시 위치 지도")
+st_folium(city_map, width=700, height=450)
 
-# 모든 관광지 마커 추가 (선택지 강조)
-for spot in tourist_spots:
-    if spot["name"] == selected_name:
-        folium.Marker(
-            location=spot["location"],
-            tooltip=spot["name"],
-            icon=folium.Icon(color="blue", icon="star")
-        ).add_to(m)
-    else:
-        folium.Marker(
-            location=spot["location"],
-            tooltip=spot["name"],
-            icon=folium.Icon(color="gray", icon="info-sign")
-        ).add_to(m)
-
-st.subheader("🗺️ 관광지 지도")
-st_folium(m, width=700, height=500)
-
-st.subheader("🌟 관광지 상세 정보")
-st.markdown(f"### {selected_spot['name']} ({selected_spot['city']})")
-st.write(selected_spot["description"])
+st.subheader("🌡️ 도시 상세 정보")
+st.markdown(f"### {selected_city['name']} ({selected_city['country']})")
+st.markdown(f"**최근 10년간 연평균 기온:** {selected_city['avg_temp']}°C")
+st.write(selected_city["description"])
