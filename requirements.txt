@@ -1,2 +1,2 @@
 folium
-sstreamlit-folium
+streamlit-folium
