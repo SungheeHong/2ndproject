@@ -2,19 +2,19 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# 기본 파라미터 설정
+# 기본 파라미터
 H0 = 70  # 허블 상수 (km/s/Mpc)
 Omega_m = 0.3
 Omega_lambda = 0.7
 
-st.title("우주 팽창 속도와 크기의 3차원 시각화 (ΛCDM 모형)")
+st.title("우주 팽창 속도와 크기의 3차원 시각화 (ΛCDM 모형, numpy 버전)")
 
-# 슬라이더를 통한 파라미터 조정
+# 파라미터 슬라이더
 H0 = st.slider("허블 상수 H₀ (km/s/Mpc)", 50, 90, 70)
 Omega_m = st.slider("물질 밀도 파라미터 Ωₘ", 0.0, 1.0, 0.3)
 Omega_lambda = st.slider("암흑 에너지 밀도 파라미터 Ω_Λ", 0.0, 1.0, 0.7)
 
-# 적색편이 z, 스케일 팩터 a, 허블 파라미터 H(z) 계산
+# z, a, H(z) 계산
 z = np.linspace(0, 5, 200)
 a = 1 / (1 + z)
 
@@ -23,23 +23,18 @@ def Hubble(z, H0, Omega_m, Omega_lambda):
 
 H = Hubble(z, H0, Omega_m, Omega_lambda)
 
-# 우주 나이(lookback time) 계산 (대략적인 수치 적분)
-from scipy.integrate import cumtrapz
+# 우주 나이(lookback time) 근사적 계산 (numpy 만 사용)
+# H0 단위를 1/Gyr로 변환
+H0_SI = H0 * 1000 / (3.086e22)  # s^-1
+H0_inv_Gyr = 1 / H0_SI / (3.154e16 * 1e9)  # Gyr
 
-def lookback_time(z, H0, Omega_m, Omega_lambda):
-    # H0 단위를 1/Gyr로 변환 (1 Mpc ≈ 3.086e19 km, 1 Gyr ≈ 3.154e16 s)
-    H0_SI = H0 * 1000 / (3.086e22)  # s^-1
-    H0_inv_Gyr = 1 / H0_SI / (3.154e16 * 1e9)  # Gyr
-    Ez = np.sqrt(Omega_m * (1 + z) ** 3 + Omega_lambda)
-    dz = np.gradient(z)
-    integrand = 1 / ((1 + z) * Ez)
-    lookback = cumtrapz(integrand, z, initial=0) * H0_inv_Gyr
-    return lookback
+Ez = np.sqrt(Omega_m * (1 + z) ** 3 + Omega_lambda)
+integrand = 1 / ((1 + z) * Ez)
+dz = np.gradient(z)
+lookback = np.cumsum(integrand * dz) * H0_inv_Gyr
+t_age = lookback[-1] - lookback  # 현재에서 볼 때, t=0이 빅뱅
 
-t_lb = lookback_time(z, H0, Omega_m, Omega_lambda)
-t_age = t_lb[-1] - t_lb  # 현재에서 볼 때, t=0이 빅뱅
-
-# 3D 플롯: x=우주 나이(Gyr), y=스케일 팩터 a, z=허블 파라미터 H(z)
+# 3D 그래프 생성
 fig = go.Figure(data=[go.Scatter3d(
     x=t_age,
     y=a,
