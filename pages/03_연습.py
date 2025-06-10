@@ -2,58 +2,49 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# 파라미터 설정
-H0 = 70  # 허블 상수 (km/s/Mpc)
-Omega_m = 0.3
-Omega_lambda = 0.7
+st.title("입체 곡면으로 보는 우주의 크기 변화 (ΛCDM)")
 
-st.title("우주의 크기 변화 3차원 시각화 (ΛCDM)")
+# 파라미터 범위 설정
+H0 = 70  # 허블 상수 (고정)
+Omega_lambda = 0.7  # 암흑 에너지 밀도 (고정)
+z = np.linspace(0, 5, 100)  # 적색편이
+Omega_m_values = np.linspace(0.1, 0.5, 60)  # 다양한 물질 밀도
 
-# 슬라이더로 파라미터 조절
-H0 = st.slider("허블 상수 H₀ (km/s/Mpc)", 50, 90, 70)
-Omega_m = st.slider("물질 밀도 파라미터 Ωₘ", 0.0, 1.0, 0.3)
-Omega_lambda = st.slider("암흑 에너지 밀도 파라미터 Ω_Λ", 0.0, 1.0, 0.7)
+Z, OMEGA = np.meshgrid(z, Omega_m_values)
 
-# z, a, H(z) 계산
-z = np.linspace(0, 5, 300)
-a = 1 / (1 + z)
+# 코메폴리적 거리 계산 함수
+def comoving_distance(z, Omega_m, Omega_lambda, H0=70):
+    # 각 파라미터별로 shape 맞추기
+    z = np.atleast_2d(z)
+    Omega_m = np.atleast_2d(Omega_m)
+    Ez = np.sqrt(Omega_m.T * (1 + z)**3 + Omega_lambda)
+    dz = np.gradient(z, axis=1)
+    integrand = 1 / Ez
+    # 사다리꼴 적분 근사 (누적합)
+    comoving = np.cumsum(integrand * dz, axis=1) * (3e5 / H0)  # 단위: Mpc
+    return comoving
 
-def Hubble(z, H0, Omega_m, Omega_lambda):
-    return H0 * np.sqrt(Omega_m * (1 + z) ** 3 + Omega_lambda)
+# 실제 곡면 계산
+COMOVING = comoving_distance(z, Omega_m_values, Omega_lambda)
 
-H = Hubble(z, H0, Omega_m, Omega_lambda)
-
-# lookback time 계산 (numpy만 사용)
-H0_SI = H0 * 1000 / (3.086e22)  # s^-1
-H0_inv_Gyr = 1 / H0_SI / (3.154e16 * 1e9)  # Gyr
-
-Ez = np.sqrt(Omega_m * (1 + z) ** 3 + Omega_lambda)
-integrand_time = 1 / ((1 + z) * Ez)
-dz = np.gradient(z)
-lookback = np.cumsum(integrand_time * dz) * H0_inv_Gyr
-t_age = lookback[-1] - lookback  # 현재에서 볼 때, t=0이 빅뱅
-
-# 코메폴리적 거리(관측 가능한 우주의 크기) 계산 (numpy만 사용)
-integrand_dist = 1 / Ez
-comoving_dist = np.cumsum(integrand_dist * dz) * (3e5 / H0)  # 단위: Mpc
-
-# 3D 플롯 (x: 우주 나이, y: 스케일 팩터, z: 코메폴리적 거리)
-fig = go.Figure(data=[go.Scatter3d(
-    x=t_age,
-    y=a,
-    z=comoving_dist,
-    mode='lines',
-    line=dict(color=a, colorscale='Cividis', width=5),
-    hovertemplate='나이: %{x:.2f} Gyr<br>a: %{y:.3f}<br>거리: %{z:.0f} Mpc'
+# 곡면 플롯
+fig = go.Figure(data=[go.Surface(
+    x=Z,
+    y=OMEGA,
+    z=COMOVING,
+    colorscale='Viridis',
+    cmin=COMOVING.min(),
+    cmax=COMOVING.max(),
+    colorbar=dict(title="코메폴리적 거리 (Mpc)")
 )])
 fig.update_layout(
     scene=dict(
-        xaxis_title='우주 나이 (Gyr, 과거→현재)',
-        yaxis_title='스케일 팩터 a',
+        xaxis_title='적색편이 z',
+        yaxis_title='물질 밀도 Ωₘ',
         zaxis_title='코메폴리적 거리 (Mpc)'
     ),
     margin=dict(l=0, r=0, b=0, t=40),
-    title="우주의 크기 변화 3차원 그래프"
+    title="우주의 크기 변화 3차원 곡면 (Surface) 그래프"
 )
 
 st.plotly_chart(fig, use_container_width=True)
