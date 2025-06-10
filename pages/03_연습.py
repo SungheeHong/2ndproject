@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
+import scipy
 
 # 기본 파라미터 설정
 H0 = 70  # 허블 상수 (km/s/Mpc)
