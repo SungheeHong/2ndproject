@@ -58,79 +58,44 @@ tourist_spots = [
     }
 ]
 
-# 스트림릿 앱 레이아웃
+# 관광지 이름 리스트 생성
+spot_names = [spot["name"] for spot in tourist_spots]
+
 st.title("스페인 주요 관광지 친절 가이드 🇪🇸")
 st.markdown(
     """
-    스페인은 세계적으로 유명한 관광지와 유구한 역사를 자랑하는 나라입니다. 
-    아래의 가이드를 통해 스페인의 대표 명소들을 자세히 알아보고, 지도에서 위치도 직접 확인해보세요!
+    스페인은 세계적으로 유명한 관광지와 유구한 역사를 자랑하는 나라입니다.  
+    아래에서 원하는 관광지를 선택하면, 해당 지역의 위치와 상세 정보를 확인할 수 있습니다!
     """
 )
 
-# 폴리움 지도 생성
-spain_map = folium.Map(location=(40.4168, -3.7038), zoom_start=6, tiles='cartodbpositron')
+# 관광지 선택 위젯
+selected_name = st.selectbox("관광지를 선택하세요:", spot_names)
 
-# 하트 모양 CSS와 팝업 콘텐츠 생성 함수
-def make_heart_popup_html(name, city, description):
-    html = f"""
-    <div style="display: flex; justify-content: center; align-items: center;">
-      <div style="
-        width: 200px; height: 180px; position: relative;
-        display: flex; flex-direction: column; align-items: center;
-        ">
-        <div style="
-          position: absolute; top: 20px; left: 36px; width: 128px; height: 128px;
-        ">
-          <div style="
-            position: absolute; width: 128px; height: 128px; left: 0; top: 0;
-            background: red;
-            border-radius: 64px 64px 0 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-          "></div>
-          <div style="
-            position: absolute; width: 128px; height: 128px; left: 64px; top: 0;
-            background: red;
-            border-radius: 64px 64px 0 0;
-            transform: rotate(45deg);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-          "></div>
-        </div>
-        <div style="
-          position: absolute; top: 60px; left: 0; width: 200px; height: 120px;
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-          z-index: 2; color: white; text-align: center; font-family: sans-serif;
-        ">
-          <div style="font-size:1.1em; font-weight:bold;">{name}</div>
-          <div style="font-size:0.95em; margin-bottom:2px;">({city})</div>
-          <div style="font-size:0.88em; margin-top:5px; max-height:72px; overflow:auto; padding:0 8px;">
-            {description}
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-    return html
+# 선택된 관광지 정보 추출
+selected_spot = next(spot for spot in tourist_spots if spot["name"] == selected_name)
 
-# 하트 모양 팝업을 지도에 추가
+# 지도 생성 및 마커 표시
+m = folium.Map(location=selected_spot["location"], zoom_start=13, tiles='cartodbpositron')
+
+# 모든 관광지 마커 추가 (선택지 강조)
 for spot in tourist_spots:
-    popup_html = make_heart_popup_html(spot["name"], spot["city"], spot["description"])
-    iframe = folium.IFrame(html=popup_html, width=230, height=200)
-    popup = folium.Popup(iframe, max_width=250)
-    folium.Marker(
-        location=spot["location"],
-        popup=popup,
-        tooltip=spot["name"],
-        icon=folium.Icon(color="red", icon="info-sign")
-    ).add_to(spain_map)
+    if spot["name"] == selected_name:
+        folium.Marker(
+            location=spot["location"],
+            tooltip=spot["name"],
+            icon=folium.Icon(color="blue", icon="star")
+        ).add_to(m)
+    else:
+        folium.Marker(
+            location=spot["location"],
+            tooltip=spot["name"],
+            icon=folium.Icon(color="gray", icon="info-sign")
+        ).add_to(m)
 
-# 지도 표시
-st.subheader("🗺️ 관광지 위치 지도")
-st_folium(spain_map, width=700, height=500)
+st.subheader("🗺️ 관광지 지도")
+st_folium(m, width=700, height=500)
 
-# 관광지별 상세 설명
-st.subheader("🌟 주요 관광지 상세 가이드")
-for spot in tourist_spots:
-    st.markdown(f"### {spot['name']} ({spot['city']})")
-    st.write(spot["description"])
-    st.markdown("---")
+st.subheader("🌟 관광지 상세 정보")
+st.markdown(f"### {selected_spot['name']} ({selected_spot['city']})")
+st.write(selected_spot["description"])
